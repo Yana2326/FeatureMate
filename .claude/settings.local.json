@@ -130,7 +130,22 @@
       "Bash(python discover_new_ui.py)",
       "Bash(.venv/bin/python discover_new_ui.py)",
       "Bash(.venv/bin/python probe_compare_flags.py)",
-      "Bash(.venv/bin/python probe_admin_team_click.py)"
+      "Bash(.venv/bin/python probe_admin_team_click.py)",
+      "Bash(python3 -m playwright install firefox)",
+      "Bash(python3 diagnose_hash_or_firefox.py)",
+      "Bash(python3 diagnose_mode_headful.py)",
+      "Bash(python3 diagnose_user_role.py)",
+      "Bash(rm -f /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/*.png /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/_originals/*.png)",
+      "Bash(python3 capture_add_team_member_v4.py)",
+      "Bash(mkdir -p /tmp/lora_screens)",
+      "Bash(cp /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/10_member_card_access.png /tmp/lora_screens/)",
+      "Bash(cp /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/11_member_card_notifications.png /tmp/lora_screens/)",
+      "Bash(cp /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/_originals/10_member_card_access.png /tmp/lora_screens/10_orig.png)",
+      "Bash(cp /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/_originals/11_member_card_notifications.png /tmp/lora_screens/11_orig.png)",
+      "Bash(cp /tmp/lora_screens/10_member_card_access.png /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/10_member_card_access.png)",
+      "Bash(cp /tmp/lora_screens/11_member_card_notifications.png /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/11_member_card_notifications.png)",
+      "Bash(cp /tmp/lora_screens/10_orig.png /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/_originals/10_member_card_access.png)",
+      "Bash(cp /tmp/lora_screens/11_orig.png /Users/yanabarantseva/kb-agent/output/add-team-member/screenshots/_originals/11_member_card_notifications.png)"
     ]
   }
 }
