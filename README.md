@@ -1,70 +1,151 @@
-# KB Agent — Altegio Feature Documenter
+# FeatureMate 🤝
 
-AI-агент для автоматического создания статей базы знаний по новым фичам Altegio.
+> Your AI-powered documentation partner — from feature release to published KB article, automatically.
 
-## Как работает
+FeatureMate is an AI agent that automates end-to-end creation of knowledge base articles for Altegio. It logs into the live Altegio interface, captures fresh screenshots, writes a complete article, and exports a publication-ready PDF — all without manual input.
 
-1. Заходит в тестовый аккаунт Altegio через Playwright
-2. Переходит по указанному пути в интерфейсе
-3. Анализирует страницу: тексты, кнопки, поля, переключатели
-4. Делает скриншоты ключевых шагов
-5. Генерирует черновик статьи на русском языке в Markdown
-6. Сохраняет: статью `.md`, скриншоты, JSON-анализ страницы
+---
 
-## Установка
+## Stack
+
+- **Python 3.11+**
+- **Claude Code** — article writing, validation, and quality checks
+- **Playwright + Chromium** — browser automation and live screenshot capture
+- **Altegio Knowledge Base MCP** — pre-research and style reference from live KB
+- **ReportLab** — PDF generation with embedded screenshots
+
+---
+
+## Project Structure
+
+```
+kb-agent/
+├── agent.py                        # main agent orchestration
+├── prompts.py                      # all prompt templates
+├── altegio_helpers.py              # Altegio login and navigation helpers
+├── CLAUDE.md                       # agent memory, rules, and screenshot guidelines
+├── requirements.txt
+│
+├── capture_add_team_member.py      # screenshot capture for a specific article
+├── annotate_screenshots.py         # red rectangle annotation pass
+├── export_pdf.py                   # PDF generation with embedded images
+├── build_html_add_team_member.py   # markdown → HTML conversion
+│
+├── save_admin_state.py             # saves browser session in Administration mode
+├── admin_storage_state.json        # saved browser session (gitignored)
+│
+├── output/                         # generated articles (gitignored)
+│   └── <article-name>/
+│       ├── article.md
+│       ├── article.html
+│       ├── article.pdf
+│       └── screenshots/
+│           ├── _originals/
+│           └── *.png (annotated)
+│
+├── .env.example
+└── .env                            # your credentials (gitignored)
+```
+
+---
+
+## How It Works
+
+1. Agent loads saved browser session in Administration mode
+2. Navigates to the relevant section of the Altegio UI
+3. Takes screenshots of the live interface for each step
+4. Annotates every screenshot with red rectangles highlighting key UI elements
+5. Pre-researches the topic using the Altegio Knowledge Base MCP
+6. Writes a full KB article in English with quality checks (hallucination check, forbidden phrases, flow check)
+7. Exports a PDF with all screenshots embedded
+
+---
+
+## Setup
+
+### 1. Clone the repo
 
 ```bash
-# 1. Создать виртуальное окружение
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+git clone https://github.com/Yana2326/FeatureMate.git
+cd FeatureMate
+```
 
-# 2. Установить зависимости
+### 2. Install dependencies
+
+```bash
 pip install -r requirements.txt
-
-# 3. Установить Playwright браузеры
-npx playwright install chromium
-
-# 4. Настроить переменные окружения
-cp .env.example .env
-# Заполнить .env своими данными
+playwright install chromium
 ```
 
-## Использование
+### 3. Configure environment
 
 ```bash
-# Базовый запуск
-python agent.py --feature "Sell product" --path "Calendar → Sell product"
-
-# С описанием фичи
-python agent.py \
-  --feature "Sell product" \
-  --path "Calendar → Sell product" \
-  --description "Продажа товаров прямо из карточки записи клиента"
+cp .env.example .env
 ```
 
-### Параметры
-
-| Параметр | Обязательный | Описание |
-|---|---|---|
-| `--feature` | Да | Название фичи |
-| `--path` | Да | Путь в интерфейсе (например: `Calendar → Sell product`) |
-| `--description` | Нет | Краткое описание для контекста |
-
-## Структура выходных файлов
+Fill in `.env`:
 
 ```
-output/
-└── sell_product/
-    ├── article.md           # Статья базы знаний (русский, Markdown)
-    ├── page_analysis.json   # JSON-анализ UI-элементов страницы
-    ├── screenshots.md       # Список сделанных скриншотов
-    └── *.png                # Скриншоты (сохраняются Playwright)
+# Altegio test account credentials
+ALTEGIO_EMAIL=your_test_account@email.com
+ALTEGIO_PASSWORD=your_password_here
 ```
 
-## Переменные окружения (.env)
+### 4. Save Administration mode session (one-time setup)
 
+```bash
+python3 save_admin_state.py
 ```
-ANTHROPIC_API_KEY=     # API-ключ Claude
-ALTEGIO_EMAIL=         # Email тестового аккаунта Altegio
-ALTEGIO_PASSWORD=      # Пароль тестового аккаунта
+
+A browser window will open. Click the **Administration** button in the bottom-left corner, verify the sidebar switches to admin view, then press **Enter** in the terminal. This saves your session so the agent always starts in Administration mode.
+
+### 5. Run the agent
+
+```bash
+python3 agent.py
 ```
+
+---
+
+## Requirements
+
+- Altegio account with Administration mode access
+- Claude Code
+- Altegio Knowledge Base MCP connected in Claude
+- Python 3.11+
+- macOS (tested on macOS with Playwright Chromium)
+
+---
+
+## Roadmap
+
+| Feature | Status |
+|---|---|
+| KB article generation with live screenshots | ✅ v1 done |
+| Red rectangle annotations | ✅ v1 done |
+| PDF export with embedded images | ✅ v1 done |
+| Altegio KB MCP integration | ✅ v1 done |
+| 🎬 Video scripts | 🔜 Planned |
+| 📢 Team announcements via Slack | 🔜 Planned |
+| 👥 Client release communications | 🔜 Planned |
+| 🔍 Outdated article detection (Mode 2) | 🔜 Planned |
+| ✏️ Surgical article updates (Mode 3) | 🔜 Planned |
+| 🌐 WordPress direct publishing | 🔜 Planned |
+| 🌍 Multilingual output (EN, RU, UK, PT, HU, ES) | 🔜 Planned |
+| 💬 Slack bot — tag @FeatureMate in feature threads or trigger from dev team message | 🔜 Planned |
+
+---
+
+## Notes
+
+This is v1. The agent produces high-quality article drafts that require a light review pass before publishing. The core pipeline — navigation, screenshot capture, article writing, and PDF export — is fully working. Screenshot annotation and Administration mode detection are actively being improved.
+
+---
+
+## Project Status
+
+**v1 — active development.** Core pipeline is working. New modes and integrations are being added iteratively. Submitted to internal vibe-coding competition at Altegio.
+
+---
+
+*Built by Yana Barantseva, Content & Localization Team, Altegio*
