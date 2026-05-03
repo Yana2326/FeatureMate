@@ -41,8 +41,18 @@ PAD      = 10
 # ═══════════════════════════════════════════════════════════════════════════
 # Browser bootstrap — ALWAYS isolated Chromium (CLAUDE.md SECURITY RULE)
 # ═══════════════════════════════════════════════════════════════════════════
-def launch_isolated_browser(pw, headless: bool = True) -> tuple[Any, BrowserContext, Page]:
-    """Launch a fresh Chromium — no CDP attach, no profile reuse."""
+def launch_isolated_browser(
+    pw,
+    headless: bool = True,
+    storage_state: str | Path | None = None,
+) -> tuple[Any, BrowserContext, Page]:
+    """Launch a fresh Chromium — no CDP attach, no profile reuse.
+
+    If `storage_state` points to a JSON file, the browser context is created
+    with that state pre-loaded (cookies + localStorage + sessionStorage).
+    This is how we reuse a manually-established Administration-mode session
+    captured by save_admin_state.py — see CLAUDE.md.
+    """
     browser = pw.chromium.launch(
         headless=headless,
         args=[
@@ -51,7 +61,7 @@ def launch_isolated_browser(pw, headless: bool = True) -> tuple[Any, BrowserCont
             "--no-sandbox",
         ],
     )
-    ctx = browser.new_context(
+    ctx_kwargs = dict(
         viewport={"width": 1920, "height": 1080},
         locale="en-US",
         user_agent=(
@@ -60,6 +70,9 @@ def launch_isolated_browser(pw, headless: bool = True) -> tuple[Any, BrowserCont
             "Chrome/130.0.0.0 Safari/537.36"
         ),
     )
+    if storage_state is not None and Path(storage_state).exists():
+        ctx_kwargs["storage_state"] = str(storage_state)
+    ctx = browser.new_context(**ctx_kwargs)
     page = ctx.new_page()
     return browser, ctx, page
 

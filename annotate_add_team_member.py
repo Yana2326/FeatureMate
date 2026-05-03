@@ -40,20 +40,34 @@ BBOX_JSON = ROOT / "bboxes.json"
 # Each spec is either:
 #   {"key1": "key2"}        # path inside bboxes.json -> draws that single rect
 # A spec can also be inline {x,y,w,h}.
+# Tab bar positions are constant across all member-card screenshots.
+# Coordinates captured from 05_member_card_information via Playwright bounding_box().
+_TAB = {
+    "Information":     {"x": 1120, "y": 80, "w": 102, "h": 32},
+    "Services":        {"x": 1226, "y": 80, "w": 118, "h": 32},
+    "Online booking":  {"x": 1348, "y": 80, "w": 122, "h": 32},
+    "Payroll":         {"x": 1474, "y": 80, "w":  75, "h": 32},
+    "Work Schedule":   {"x": 1552, "y": 80, "w": 122, "h": 32},
+    "Access":          {"x": 1679, "y": 80, "w":  78, "h": 32},
+    "Notifications":   {"x": 1761, "y": 80, "w": 109, "h": 32},
+    "Settings":        {"x": 1874, "y": 80, "w":  84, "h": 32},
+    "Legal information": {"x": 1961, "y": 80, "w": 136, "h": 32},
+}
+
 ANNOTATION_PLAN: dict[str, list[dict]] = {
     "01_team_members_list":         [{"path": ["add_button"]}],
     "02_add_chooser_panel":         [{"path": ["employee_tile"]}],
     "03_add_form_empty":            [{"path": ["form_panel"]}],
-    "04_add_form_filled":           [],          # no annotation
-    "05_member_card_information":   [{"path": ["tabs", "Information"]}],
-    "06_member_card_services":      [],
-    "07_member_card_online_booking":[],
-    "08_member_card_payroll":       [],
-    "09_member_card_work_schedule": [],
-    "10_member_card_access":        [],
-    "11_member_card_notifications": [],
-    "12_member_card_settings":      [],
-    "13_member_card_legal_info":    [],
+    "04_add_form_filled":           [{"x": 1020, "y": 0, "w": 900, "h": 1080}],
+    "05_member_card_information":   [_TAB["Information"]],
+    "06_member_card_services":      [_TAB["Services"]],
+    "07_member_card_online_booking":[_TAB["Online booking"]],
+    "08_member_card_payroll":       [_TAB["Payroll"]],
+    "09_member_card_work_schedule": [_TAB["Work Schedule"]],
+    "10_member_card_access":        [_TAB["Access"]],
+    "11_member_card_notifications": [_TAB["Notifications"]],
+    "12_member_card_settings":      [_TAB["Settings"]],
+    "13_member_card_legal_info":    [{"x": 1120, "y": 130, "w": 756, "h": 700}],
 }
 
 
@@ -81,6 +95,8 @@ def draw_rect(img: Image.Image, bbox: dict) -> None:
     y0 = max(0, round(bbox["y"] - PAD))
     x1 = min(W - 1, round(bbox["x"] + bw + PAD))
     y1 = min(H - 1, round(bbox["y"] + bh + PAD))
+    if x1 <= x0 or y1 <= y0:
+        return
 
     ImageDraw.Draw(img).rectangle(
         [(x0, y0), (x1, y1)],

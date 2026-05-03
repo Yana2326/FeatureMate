@@ -313,8 +313,14 @@ def export_pdf(article_path: Path,
     story: list = []
     blocks = _parse(md_text, article_dir)
 
+    # Mark blocks that have already been consumed by a KeepTogether group
+    # built from a preceding H2 (so we don't render them twice).
+    skip = [False] * len(blocks)
+
     prev_type = None
-    for block in blocks:
+    for i, block in enumerate(blocks):
+        if skip[i]:
+            continue
         btype = block[0]
 
         if btype == "h1":
@@ -326,11 +332,27 @@ def export_pdf(article_path: Path,
             ]
 
         elif btype == "h2":
-            # Keep heading with whatever follows (avoids orphan heading)
-            story.append(Spacer(1, 4))
-            story.append(Paragraph(_rl(block[1]), S["h2"]))
-            story.append(HRFlowable(width="100%", thickness=0.5,
-                                    color=C_BORDER, spaceAfter=6))
+            # Look ahead: if the next non-blank block is an image, bundle the
+            # H2 + image in a KeepTogether so the heading never ends up on a
+            # different page than the screenshot it introduces.
+            j = i + 1
+            while j < len(blocks) and blocks[j][0] == "space":
+                j += 1
+            heading_flowables = [
+                Spacer(1, 4),
+                Paragraph(_rl(block[1]), S["h2"]),
+                HRFlowable(width="100%", thickness=0.5,
+                           color=C_BORDER, spaceAfter=6),
+            ]
+            if j < len(blocks) and blocks[j][0] == "image":
+                # Bundle H2 + image so they cannot be split across pages.
+                image_flowables = _image_flowable(
+                    blocks[j][1], blocks[j][2], S)
+                story.append(KeepTogether(
+                    heading_flowables + image_flowables))
+                skip[j] = True  # don't render the image again later
+            else:
+                story.extend(heading_flowables)
 
         elif btype == "body":
             story.append(Paragraph(_rl(block[1]), S["body"]))

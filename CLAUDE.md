@@ -84,11 +84,65 @@ The left sidebar menu items are hidden in the DOM until hovered, and menu clicks
 
 ### Complete URL Map (test account COMPANY_ID = 1253779)
 
-**Mode switching (hash-based, same base URL):**
+**Mode switching:**
+
+The mode is toggled by a yellow button in the bottom-left corner of the sidebar. The button label shows the OTHER mode (where clicking takes you), so:
+- Button text "Administration" → currently in Digital Schedule mode (click to switch)
+- Button text "Digital Schedule" → currently in Administration mode (do not click)
+
+**Verification:** in Administration mode, the sidebar shows these items at the top: Analytical Reports, Team, Clients, Online Booking, Services, Products, Finance, Payroll, Notifications, Loyalty, Resources, Integrations, Settings.
+
+**Working selector for the mode-switch button:**
+
+```css
+.erp-nav-menu-mode-switch-footer-button
+```
+
+Exact HTML structure (verified 2026-04-30 on the test account):
+
+```html
+<div class="erp-nav-menu-mode-switch-footer-button">
+  <i class="q-icon my-icon-ds-settings" aria-hidden="true" role="presentation"></i>
+  <span>Administration</span>
+</div>
+```
+
+The button has yellow background (`rgb(255, 203, 0)`) and `cursor: pointer`. The text label is in the inner `<span>`. Position in the test viewport: x=0, y=1006, w=220, h=44.
+
+> ✅ **WORKING SOLUTION — Playwright `storageState` captured from a manual click.**
+>
+> Mode is held in Vue 3 reactive state tied to the browser session. It is NOT in cookies, localStorage, or sessionStorage as a discoverable flag, and clicking the yellow `.erp-nav-menu-mode-switch-footer-button` from Playwright reaches the Vue handler (verified: trusted events, handler executes) but does not switch the mode (0 network requests after click — see KNOWN LIMITATION below).
+>
+> **One-time setup** (run on the user's machine, headful):
+>
+> ```bash
+> python3 save_admin_state.py
+> ```
+>
+> The script auto-logs in and opens a headful browser. The user manually clicks the yellow "Administration" button in the bottom-left, verifies the sidebar now shows Analytical Reports / Team / Clients / Online Booking / Services / Products / Finance / Payroll / Notifications / Loyalty / Resources / Integrations / Settings, then presses Enter in the terminal. The script saves cookies + localStorage + sessionStorage to `admin_storage_state.json`.
+>
+> **Subsequent capture runs** (any article): `launch_isolated_browser(pw, storage_state="admin_storage_state.json")` — the context starts already in Administration mode. Skip `login()` and skip the mode-switch click entirely.
+>
+> Re-run `save_admin_state.py` only if Altegio invalidates the session (cookie expiry, etc.) or the saved state stops producing the admin sidebar.
+>
+> ⚠️ **KNOWN LIMITATION — the click handler does not fire from Playwright in a fresh session.**
+>
+> Verified 2026-04-30 with diagnostic capture-event listeners: clicks from Playwright **do** reach the button as fully trusted native events (`isTrusted: True`, all of pointerdown / mousedown / pointerup / mouseup / click fire on the `<span>` inside `.erp-nav-menu-mode-switch-footer-button`, `defaultPrevented: false`). The Vue 3 click handler on the button **does** execute. But it produces **zero** network requests, no URL change, no DOM mutation, and no console output. Mode does not switch.
+>
+> The screenshot the product owner provided shows account `yana.b@alteg.io` (an Altegio employee account). The `.env` test account is `yanabar2304@gmail.com` (user_id 12735899, customer account). The mode-switch handler in this Vue 3 build appears to silently no-op when the logged-in user lacks an internal "employee/staff" role — explaining why the click is received but nothing happens. This is an **account-permissions issue**, not a browser-automation issue.
+>
+> Tested and ruled out: `locator.click()`, `locator.click(force=True)`, `mouse.move(steps)+down/up`, `mouse.click(delay=…)`, focus + Enter / Space, `dispatchEvent()` with full pointer/mouse sequences, CDP `Input.dispatchMouseEvent`, clicking the parent wrapper, inner span, gear icon, scroll-into-view + hover, stealth (`navigator.webdriver=undefined`), longer hydration waits (4–10 s), headless Chromium, headful Chromium, Firefox, `#mode=0` hash, `location.hash` JS assignment.
+>
+> **What to do:**
+> 1. To get screenshots that show the genuine Administration-mode sidebar (Analytical Reports, Team, Clients, Online Booking, Services, Products, Finance, Payroll, Notifications, Loyalty, Resources, Integrations, Settings), the test account needs to be upgraded to an employee/staff role in Altegio's user model — or use a different account that already has the role. Ping the product owner.
+> 2. **Until then, navigate directly to admin-only URLs** (e.g. `/settings/sidebar/staff/{id}/?…`). The page content lands on the correct admin section with correct page-content elements (filters, tabs, action buttons, member cards, all 9 inner tabs). The left sidebar will still show Digital-Schedule-style elements (mini-calendar, Quick Bar, Favorites), which is a visual gap from a real admin-mode session. Document this gap in the article QA checklist.
+
 | Section | URL |
 |---|---|
 | Digital Schedule mode | `/timetable/{id}/#mode=1` |
-| Administration mode | `/timetable/{id}/#mode=0` |
+| Administration mode (legacy hash — does NOT switch sidebar in current UI) | `/timetable/{id}/#mode=0` |
+| Admin-only entry (workaround) | `/analytics/{id}/?start_date=…&end_date=…&user_id=0&position_id=0&master_id=0` |
+| Admin Team list (direct) | `/settings/sidebar/staff/{id}/?position_id=-1&fired=0&deleted=0&user_linked=2&is_paid=2` |
 
 **Appointment Calendar & Records:**
 | Section | URL |
@@ -306,6 +360,68 @@ Call `close_translate_popup(page)` inside `nuke_overlays` or right after every `
 9. Interact freely — create and save data as needed (this is a test account)
 10. Write the article following rules in prompts.py
 11. Run the checklist before saving
+
+## Article Quality Rules
+
+These rules apply to every article written with this agent. Check all of them before saving the final article and generating the PDF.
+
+### 1. Administration mode (MANDATORY first step)
+Always switch to **Administration** mode before navigating the UI or taking screenshots. Screenshots taken in Digital Schedule mode do not match the Administration UI and must be retaken.
+
+### 2. Screenshot accuracy
+Before taking a screenshot for each section, navigate to that exact tab or page. Every screenshot must match the section it illustrates — do not reuse a screenshot from a different tab or step.
+
+### 3. Annotations (MANDATORY)
+Every screenshot must have at least one red rectangle annotation highlighting the relevant UI element. Use `element.bounding_box()` from Playwright to get exact coordinates, expand by 10 px padding on every side, and draw a 3 px red rectangle with Pillow. Never publish a screenshot without an annotation.
+
+### 4. Writing style
+Do not list UI elements mechanically. Write as a guide: explain what the user can do here and why it matters. Each section should answer "why would I use this?" in addition to "what is here?" Use clear, helpful language — if you would not say something out loud to a colleague, do not write it.
+
+### 5. Placeholder check (MANDATORY)
+Never leave `[Screenshot]` or any other placeholder in the final article. Every placeholder must be replaced with a real `![alt](screenshots/filename.png)` reference before saving. Run `grep '\[Screenshot\]' article.md` as a final check.
+
+### 6. Section completeness
+Every tab and section must be fully described. One-sentence summaries are not acceptable. Describe what the user can configure, what the controls do, and when they would use each option.
+
+### 7. Article title
+The title must accurately reflect the full content of the article, not just the first action. If the article covers adding and configuring a team member across nine tabs, the title must say so. Use the form "How to [full scope] in Altegio".
+
+### 8. Empty and locked states
+When describing a tab or section, always cover both:
+- The **active/configured state** — what the user can see and do when the feature is set up.
+- The **empty or locked state** — what happens when access is missing, no data has been entered, or a prerequisite is not met (for example, "No access — assign access rights first").
+
+---
+
+## Screenshot Rules (MANDATORY — applies to every article, every time)
+
+### 1. Always switch to Administration mode first
+Before any navigation or screenshot, explicitly click the yellow **Administration** button in the bottom-left corner. Do not assume the correct mode is already active.
+
+### 2. Verify Administration mode is active
+After switching, confirm the left sidebar contains all of these items:
+**Analytical Reports, Team, Clients, Online Booking, Services, Products, Finance, Payroll, Notifications, Loyalty, Resources, Integrations, Settings**
+If any are missing, the mode switch failed — do not proceed until verified.
+
+### 3. First screenshot of any navigation article: sidebar, not action button
+The first screenshot must show the **Administration mode sidebar** with a red rectangle around the specific menu item being described (e.g. "Team members list" under "Team"). Never highlight an action button (like "+ Add") in a navigation step. The sidebar navigation — not the page content — is what illustrates navigation instructions.
+
+### 4. Before every tab screenshot: click, wait, verify
+Before capturing each tab screenshot:
+1. Explicitly click the tab by its exact label
+2. Wait for a unique element inside that tab to confirm it has fully loaded
+3. Read the active tab label from the DOM and confirm it matches the section
+4. If it does not match — re-click and verify before shooting
+
+### 5. Every screenshot must have at least one red rectangle annotation
+No screenshot goes into the article without a red rectangle highlighting the relevant UI element. Annotate immediately after capture (inline PIL, 10 px padding, 3 px stroke, colour #DC2626). Use `element.bounding_box()` from Playwright for exact coordinates.
+
+### 6. Verify every screenshot against its section before finishing
+After all screenshots are captured, read the screenshots index and confirm each file matches the section it illustrates. Wrong screenshots must be retaken — never left in place.
+
+### 7. These rules apply to every future article without exception
+
+---
 
 ## Language Switching (MANDATORY before every article)
 
