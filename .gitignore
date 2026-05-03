@@ -4,3 +4,15 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Debug and diagnostic scripts
+diagnose_*.py
+probe_*.py
+explore_*.py
+discover_*.py
+capture_add_team_member_v2.py
+capture_add_team_member_v3.py
+capture_add_team_member_v4.py
+
+# Sensitive files
+admin_storage_state.json
