@@ -1,4 +1,4 @@
-# FeatureMate 🤝
+# FeatureMate 
 
 > Your AI-powered documentation partner — from feature release to published KB article, automatically.
 
@@ -147,5 +147,3 @@ This is v1. The agent produces high-quality article drafts that require a light 
 **v1 — active development.** Core pipeline is working. New modes and integrations are being added iteratively. Submitted to internal vibe-coding competition at Altegio.
 
 ---
-
-*Built by Yana Barantseva, Content & Localization Team, Altegio*
